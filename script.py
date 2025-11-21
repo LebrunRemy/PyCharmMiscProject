@@ -29,164 +29,340 @@ f1PilotsDatabase = [
 ]
 
 # -----------------------------
-# Classe principale
+# Temps de base circuits 2024
 # -----------------------------
+CIRCUITS_2024 = {
+    "Bahreïn": 91.0,
+    "Djeddah": 88.5,
+    "Melbourne": 87.5,
+    "Suzuka": 89.0,
+    "Shanghai": 95.0,
+    "Miami": 92.0,
+    "Imola": 88.0,
+    "Monaco": 73.5,
+    "Barcelone": 80.5,
+    "Montréal": 72.5,
+    "Red Bull Ring": 65.5,
+    "Silverstone": 87.0,
+    "Hungaroring": 77.5,
+    "Spa": 104.0,
+    "Zandvoort": 72.5,
+    "Monza": 81.0,
+    "Singapour": 100.0,
+    "Austin": 97.0,
+    "Mexique": 78.0,
+    "Interlagos": 71.0,
+    "Las Vegas": 95.0,
+    "Abu Dhabi": 94.0
+}
+
+# -----------------------------
+# Incidents
+# -----------------------------
+F1_INCIDENTS = [
+    {"text": "fait une petite erreur au freinage", "penalty": 1.5},
+    {"text": "bloque une roue et élargit", "penalty": 2.0},
+    {"text": "glisse en sortie de virage", "penalty": 1.2},
+    {"text": "sort un peu large", "penalty": 2.5},
+    {"text": "fait un tête-à-queue", "penalty": 4.5},
+]
+
+# =====================================================
+#              CLASSE PRINCIPALE
+# =====================================================
 class RacingSimulator:
+
     def __init__(self, root):
         self.root = root
-        self.root.title("Simulateur F1")
-        self.root.geometry("900x700")
-        self.root.configure(bg="#1f1f1f")
+        self.root.title("Simulateur Duel F1")
+        self.root.geometry("1000x700")
+        self.root.configure(bg="#101010")
 
-        # Pilotes sélectionnés
-        self.pilots = [f1PilotsDatabase[0].copy(), f1PilotsDatabase[1].copy()]
-        for i, p in enumerate(self.pilots):
-            p.update({"position": i+1, "crashes": 0, "overtakes": 0})
-
-        self.totalLaps = 10
+        self.totalLaps = 20
         self.currentLap = 0
         self.isRunning = False
 
-        # Style ttk
-        self.style = ttk.Style()
-        self.style.theme_use("clam")
-        self.style.configure("TButton", font=("Helvetica", 11), background="#1e90ff", foreground="white", padding=5)
-        self.style.map("TButton", background=[("active", "#63B8FF")], foreground=[("disabled", "#A9A9A9")])
-        self.style.configure("TLabel", font=("Helvetica", 10), foreground="#F0F0F0", background="#1f1f1f")
-        self.style.configure("Header.TLabel", font=("Helvetica", 14, "bold"))
+        # Meilleur tour
+        self.fastest_lap_time = None
+        self.fastest_lap_driver = None
 
-        # Frames
-        self.frame_top = ttk.Frame(root, padding=10)
-        self.frame_top.pack(fill="x")
+        # Sélection pilotes + circuit
+        self.pilot_vars = [tk.StringVar(), tk.StringVar()]
+        self.pilot_vars[0].set(f1PilotsDatabase[0]["name"])
+        self.pilot_vars[1].set(f1PilotsDatabase[1]["name"])
+        self.circuit_var = tk.StringVar(value=list(CIRCUITS_2024.keys())[0])
 
-        self.frame_pilots = ttk.Frame(root, padding=10)
-        self.frame_pilots.pack(fill="x")
+        # =============================
+        # UI
+        # =============================
+        title = ttk.Label(root, text="SIMULATEUR F1 – DUEL 2 PILOTES",
+                          font=("Helvetica", 18, "bold"), background="#101010", foreground="white")
+        title.pack(pady=10)
 
-        self.frame_buttons = ttk.Frame(root, padding=10)
-        self.frame_buttons.pack(fill="x")
+        # Circuit + Pilotes
+        top = ttk.Frame(root)
+        top.pack()
 
-        self.frame_events = ttk.Frame(root, padding=10)
-        self.frame_events.pack(fill="both", expand=True)
+        # Circuit
+        c_frame = ttk.Frame(top)
+        c_frame.grid(row=0, column=0, padx=20)
+        ttk.Label(c_frame, text="Circuit :", background="#101010", foreground="white").pack()
+        ttk.OptionMenu(c_frame, self.circuit_var, self.circuit_var.get(), *CIRCUITS_2024.keys()).pack()
 
-        # Widgets
-        ttk.Label(self.frame_top, text="Simulateur de Duel Pilote", style="Header.TLabel").pack(pady=5)
+        # Pilotes
+        p_frame = ttk.Frame(top)
+        p_frame.grid(row=0, column=1, padx=20)
 
-        self.create_pilot_selection()
-        self.create_control_buttons()
-
-        self.event_text = tk.Text(self.frame_events, height=15, bg="#333333", fg="white", state="disabled")
-        self.event_text.pack(fill="both", expand=True)
-
-    # -----------------
-    # Sélection des pilotes
-    # -----------------
-    def create_pilot_selection(self):
-        ttk.Label(self.frame_pilots, text="Choisissez vos pilotes:").pack()
-        self.pilot_vars = [tk.StringVar(value=self.pilots[0]["name"]),
-                           tk.StringVar(value=self.pilots[1]["name"])]
-
-        self.option_menus = []
         for i in range(2):
-            frame = ttk.Frame(self.frame_pilots, padding=5)
-            frame.pack(side="left", padx=20)
-            ttk.Label(frame, text=f"Pilote {i+1}:", style="Header.TLabel").pack()
-            menu = ttk.OptionMenu(frame, self.pilot_vars[i],
-                                  self.pilot_vars[i].get(),
-                                  *[p["name"] for p in f1PilotsDatabase],
-                                  command=lambda val, i=i: self.select_pilot(i, val))
-            menu.pack(pady=5)
-            self.option_menus.append(menu)
+            ttk.Label(p_frame, text=f"Pilote {i+1} :", background="#101010", foreground="white").grid(row=0, column=i)
+            ttk.OptionMenu(
+                p_frame, self.pilot_vars[i], self.pilot_vars[i].get(),
+                *[p["name"] for p in f1PilotsDatabase],
+                command=lambda _, idx=i: self.select_pilot(idx)
+            ).grid(row=1, column=i, padx=10)
 
-    def select_pilot(self, index, name):
-        pilot = next(p for p in f1PilotsDatabase if p["name"] == name)
-        self.pilots[index] = pilot.copy()
-        self.pilots[index].update({"position": index+1, "crashes":0, "overtakes":0})
+        # Info tour
+        self.lap_label = ttk.Label(root, text=f"Tour : 0 / {self.totalLaps}",
+                                   background="#101010", foreground="white")
+        self.lap_label.pack(pady=5)
 
-    # -----------------
-    # Contrôles
-    # -----------------
-    def create_control_buttons(self):
-        ttk.Button(self.frame_buttons, text="Lancer la course", command=self.run_simulation).pack(side="left", padx=10)
-        ttk.Button(self.frame_buttons, text="Réinitialiser", command=self.reset_simulation).pack(side="left", padx=10)
+        # Tableau style F1 TV
+        table_frame = ttk.Frame(root)
+        table_frame.pack(fill="x", padx=20)
 
-    # -----------------
-    # Simulation
-    # -----------------
+        self.table = ttk.Treeview(table_frame, columns=("pos", "name", "pit", "inc", "gap"),
+                                  show="headings", height=4)
+        self.table.pack(fill="x")
+
+        for col, text in zip(("pos", "name", "pit", "inc", "gap"),
+                             ("Pos", "Pilote", "Pits", "Inc.", "Écart")):
+            self.table.heading(col, text=text)
+
+        # Journal
+        ttk.Label(root, text="Journal de course :", background="#101010",
+                  foreground="white").pack(anchor="w", padx=20)
+        self.event_text = tk.Text(root, height=12, bg="#181818", fg="white", state="disabled")
+        self.event_text.pack(fill="both", expand=True, padx=20, pady=5)
+
+        # Tags couleurs
+        self.event_text.tag_config("incident", foreground="#ff4c4c")
+        self.event_text.tag_config("pit", foreground="#00b7ff")
+        self.event_text.tag_config("overtake", foreground="#a020f0")
+        self.event_text.tag_config("info", foreground="#ffffff")
+
+        # Boutons
+        b_frame = ttk.Frame(root)
+        b_frame.pack(pady=10)
+        ttk.Button(b_frame, text="🚀 Lancer la course", command=self.run_simulation).grid(row=0, column=0, padx=20)
+        ttk.Button(b_frame, text="🔄 Réinitialiser", command=self.reset_simulation).grid(row=0, column=1, padx=20)
+
+        # Init pilotes
+        self.init_pilots()
+
+    # =====================================================
+    # UTIL : Format temps F1 (m:ss.xxx)
+    # =====================================================
+    def format_time(self, s):
+        m = int(s // 60)
+        sec = s % 60
+        return f"{m}:{sec:06.3f}"
+
+    # =====================================================
+    # Initialisation pilotes
+    # =====================================================
+    def init_pilots(self):
+        self.pilots = []
+        for i in range(2):
+            data = next(p for p in f1PilotsDatabase if p["name"] == self.pilot_vars[i].get()).copy()
+            data.update({
+                "position": i+1,
+                "incidents": 0,
+                "pit_stops": 0,
+                "pit_done": False,
+                "total_time": 0.0
+            })
+            self.pilots.append(data)
+        self.update_table()
+
+    # Changement pilote depuis menu
+    def select_pilot(self, index):
+        name = self.pilot_vars[index].get()
+        data = next(p for p in f1PilotsDatabase if p["name"] == name).copy()
+        data.update({
+            "position": index+1,
+            "incidents": 0,
+            "pit_stops": 0,
+            "pit_done": False,
+            "total_time": 0.0
+        })
+        self.pilots[index] = data
+        self.update_table()
+
+    # =====================================================
+    # TABLEAU
+    # =====================================================
+    def update_table(self):
+        for row in self.table.get_children():
+            self.table.delete(row)
+
+        ordered = sorted(self.pilots, key=lambda x: x["total_time"])
+        leader = ordered[0]["total_time"]
+
+        for p in ordered:
+            gap = p["total_time"] - leader
+            gap_text = "-" if gap == 0 else f"+{gap:.3f}"
+            self.table.insert("", "end",
+                              values=(f"P{ordered.index(p)+1}", p["name"],
+                                      p["pit_stops"], p["incidents"], gap_text))
+
+    # =====================================================
+    # CALCUL TEMPS AU TOUR
+    # =====================================================
     def simulate_lap(self):
         events = []
-        for pilot in self.pilots:
-            noise = (random.random() - 0.5) * (10 - pilot["consistency"])
-            aggression_bonus = pilot["aggression"]*0.5 if random.random() < (pilot["aggression"]/10) else 0
-            score = pilot["speed"]*0.4 + pilot["consistency"]*0.3 + aggression_bonus*0.3 + noise
-            crash_risk = pilot["aggression"]/50 + random.random()*0.1
-            if crash_risk > 0.15:
-                pilot["crashes"] += 1
-                score *= 0.5
-                events.append(f"{pilot['name']} a eu un incident !")
-            pilot["score"] = score
+        base = CIRCUITS_2024[self.circuit_var.get()]
 
-        # Trier par score
-        self.pilots.sort(key=lambda p: p["score"], reverse=True)
-        for i, pilot in enumerate(self.pilots):
-            old_pos = pilot["position"]
-            pilot["position"] = i+1
-            if old_pos > pilot["position"]:
-                pilot["overtakes"] += 1
-                events.append(f"{pilot['name']} dépasse et passe P{pilot['position']} !")
+        for p in self.pilots:
+
+            # Calcul réaliste
+            speed = (10 - p["speed"]) * 0.35
+            const = (10 - p["consistency"]) * 0.20
+            variance = random.uniform(-0.4, 0.4) * (1.3 - p["consistency"]/10)
+
+            perfect = 0
+            if random.random() < (0.02 + p["consistency"]/200):
+                perfect = random.uniform(-0.25, -0.10)
+
+            lap = base + speed + const + variance + perfect
+
+            # PIT stop ?
+            remaining = self.totalLaps - self.currentLap
+            must_pit = False
+
+            if not p["pit_done"]:
+                pit_prob = 0.04 + max(0, 10 - remaining) * 0.03
+                if random.random() < pit_prob:
+                    must_pit = True
+                if remaining <= 2:
+                    must_pit = True
+
+            if must_pit:
+                p["pit_done"] = True
+                p["pit_stops"] += 1
+                lap += 18
+                events.append((f"{p['name']} effectue un arrêt (+18s)", "pit"))
+
+            # INCIDENT
+            if p["aggression"]/60 + random.random()*0.05 > 0.16:
+                inc = random.choice(F1_INCIDENTS)
+                p["incidents"] += 1
+                lap += inc["penalty"]
+                events.append((f"{p['name']} {inc['text']} (+{inc['penalty']}s)", "incident"))
+
+            # Meilleur tour
+            if self.fastest_lap_time is None or lap < self.fastest_lap_time:
+                self.fastest_lap_time = lap
+                self.fastest_lap_driver = p["name"]
+                events.append((f"🔥 Meilleur tour pour {p['name']} : {self.format_time(lap)}", "overtake"))
+
+            # Update temps total
+            p["total_time"] += lap
+
+        self.pilots.sort(key=lambda x: x["total_time"])
         return events
 
-    # -----------------
-    # Lancer la course
-    # -----------------
+    # =====================================================
+    # LANCER LA COURSE
+    # =====================================================
     def run_simulation(self):
         if self.isRunning:
             return
+
         self.isRunning = True
         self.currentLap = 0
-        self.event_text.configure(state="normal")
-        self.event_text.delete("1.0", tk.END)
-        self.event_text.configure(state="disabled")
-        self.root.after(500, self.next_lap)
+        self.fastest_lap_time = None
+        self.fastest_lap_driver = None
 
-    def next_lap(self):
-        if self.currentLap >= self.totalLaps:
-            self.isRunning = False
-            winner = self.pilots[0]["name"]
-            self.add_event(f"🏁 Course terminée ! Vainqueur: {winner}")
-            return
-        self.currentLap += 1
-        events = self.simulate_lap()
-        for e in events:
-            self.add_event(f"Tour {self.currentLap}: {e}")
+        self.init_pilots()
+        self.update_table()
+
+        self.event_text.config(state="normal")
+        self.event_text.delete("1.0", tk.END)
+        self.event_text.config(state="disabled")
+
+        self.add_event(f"Départ du Grand Prix de {self.circuit_var.get()} !", "info")
         self.root.after(800, self.next_lap)
 
-    # -----------------
-    # Ajouter un événement
-    # -----------------
-    def add_event(self, message):
-        self.event_text.configure(state="normal")
-        self.event_text.insert(tk.END, message + "\n")
-        self.event_text.see(tk.END)
-        self.event_text.configure(state="disabled")
+    # =====================================================
+    # PROCHAIN TOUR
+    # =====================================================
+    def next_lap(self):
+        if self.currentLap >= self.totalLaps:
 
-    # -----------------
-    # Réinitialiser
-    # -----------------
+            # PIT manquant
+            for p in self.pilots:
+                if not p["pit_done"]:
+                    p["pit_stops"] += 1
+                    p["total_time"] += 20
+                    self.add_event(f"⚠️ {p['name']} n'avait pas fait d'arrêt : +20s", "pit")
+
+            # Meilleur tour final
+            if self.fastest_lap_time:
+                self.add_event(
+                    f"⏱️ Meilleur tour : {self.fastest_lap_driver} en {self.format_time(self.fastest_lap_time)}",
+                    "info"
+                )
+
+            # Classement final
+            self.pilots.sort(key=lambda x: x["total_time"])
+            winner = self.pilots[0]["name"]
+            self.add_event(f"🏁 Vainqueur : {winner}", "info")
+
+            self.update_table()
+            self.isRunning = False
+            return
+
+        # Sinon on continue
+        self.currentLap += 1
+        self.lap_label.config(text=f"Tour : {self.currentLap} / {self.totalLaps}")
+
+        events = self.simulate_lap()
+        self.update_table()
+
+        for msg, tag in events:
+            self.add_event(f"[Tour {self.currentLap}] {msg}", tag)
+
+        self.root.after(800, self.next_lap)
+
+    # =====================================================
+    # JOURNAL
+    # =====================================================
+    def add_event(self, text, tag="info"):
+        self.event_text.config(state="normal")
+        self.event_text.insert(tk.END, text + "\n", tag)
+        self.event_text.see(tk.END)
+        self.event_text.config(state="disabled")
+
+    # =====================================================
+    # RESET
+    # =====================================================
     def reset_simulation(self):
         self.isRunning = False
         self.currentLap = 0
-        self.pilots = [f1PilotsDatabase[0].copy(), f1PilotsDatabase[1].copy()]
-        for i, p in enumerate(self.pilots):
-            p.update({"position": i+1, "crashes": 0, "overtakes": 0})
-        self.event_text.configure(state="normal")
-        self.event_text.delete("1.0", tk.END)
-        self.event_text.configure(state="disabled")
-        for i in range(2):
-            self.pilot_vars[i].set(self.pilots[i]["name"])
+        self.fastest_lap_time = None
+        self.fastest_lap_driver = None
 
-# -----------------------------
-# Lancer l'application
-# -----------------------------
+        self.lap_label.config(text=f"Tour : 0 / {self.totalLaps}")
+        self.init_pilots()
+
+        self.event_text.config(state="normal")
+        self.event_text.delete("1.0", tk.END)
+        self.event_text.config(state="disabled")
+
+
+# =====================================================
+# LANCER L'APP
+# =====================================================
 if __name__ == "__main__":
     root = tk.Tk()
     app = RacingSimulator(root)
