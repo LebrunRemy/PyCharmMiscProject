@@ -1,10 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 import random
+from PIL import Image, ImageTk
 
-# -----------------------------
-# Base de données des pilotes
-# -----------------------------
+# ==========================================================
+# ===================== DONNÉES F1 2024 =====================
+# ==========================================================
+
 f1PilotsDatabase = [
     {"id": 1, "name": "Max Verstappen", "speed": 10, "consistency": 9, "aggression": 8},
     {"id": 2, "name": "Sergio Pérez", "speed": 7, "consistency": 6, "aggression": 7},
@@ -28,252 +30,524 @@ f1PilotsDatabase = [
     {"id": 20, "name": "Zhou Guanyu", "speed": 6, "consistency": 6, "aggression": 5},
 ]
 
-# -----------------------------
-# Temps de base circuits 2024
-# -----------------------------
+# Temps de base par circuit (en secondes, approximatif)
 CIRCUITS_2024 = {
     "Bahreïn": 91.0,
-    "Djeddah": 88.5,
-    "Melbourne": 87.5,
-    "Suzuka": 89.0,
-    "Shanghai": 95.0,
-    "Miami": 92.0,
-    "Imola": 88.0,
-    "Monaco": 73.5,
-    "Barcelone": 80.5,
-    "Montréal": 72.5,
-    "Red Bull Ring": 65.5,
-    "Silverstone": 87.0,
-    "Hungaroring": 77.5,
-    "Spa": 104.0,
-    "Zandvoort": 72.5,
-    "Monza": 81.0,
-    "Singapour": 100.0,
-    "Austin": 97.0,
-    "Mexique": 78.0,
-    "Interlagos": 71.0,
-    "Las Vegas": 95.0,
-    "Abu Dhabi": 94.0
+    "Arabie Saoudite": 91.5,
+    "Australie": 88.7,
+    "Japon": 90.0,
+    "Chine": 94.1,
+    "Miami": 97.0,
+    "Emilie-Romagne": 90.3,
+    "Monaco": 72.0,
+    "Canada": 74.5,
+    "Espagne": 84.0,
+    "Autriche": 66.0,
+    "Grande-Bretagne": 88.0,
+    "Hongrie": 78.2,
+    "Belgique": 103.5,
+    "Pays-Bas": 72.3,
+    "Italie": 83.0,
+    "Azerbaïdjan": 103.0,
+    "Singapour": 104.8,
+    "États-Unis (Austin)": 95.0,
+    "Mexique": 78.1,
+    "Brésil": 68.5,
+    "Las Vegas": 96.0,
+    "Qatar": 88.4,
+    "Abu Dhabi": 94.0,
 }
 
-# -----------------------------
-# Incidents
-# -----------------------------
-F1_INCIDENTS = [
-    {"text": "fait une petite erreur au freinage", "penalty": 1.5},
-    {"text": "bloque une roue et élargit", "penalty": 2.0},
-    {"text": "glisse en sortie de virage", "penalty": 1.2},
-    {"text": "sort un peu large", "penalty": 2.5},
-    {"text": "fait un tête-à-queue", "penalty": 4.5},
+# Nombre réel de tours 2024
+REAL_LAPS_2024 = {
+    "Bahreïn": 57, "Arabie Saoudite": 50, "Australie": 58, "Japon": 53, "Chine": 56,
+    "Miami": 57, "Emilie-Romagne": 63, "Monaco": 78, "Canada": 70, "Espagne": 66,
+    "Autriche": 71, "Grande-Bretagne": 52, "Hongrie": 70, "Belgique": 44,
+    "Pays-Bas": 72, "Italie": 53, "Azerbaïdjan": 51, "Singapour": 62,
+    "États-Unis (Austin)": 56, "Mexique": 71, "Brésil": 71, "Las Vegas": 50,
+    "Qatar": 57, "Abu Dhabi": 58,
+}
+
+# Images pilotes
+PILOT_IMAGES = {
+    "Max Verstappen": "images/pilotes/Max_Verstappen.png",
+    "Sergio Pérez": "images/pilotes/Sergio_Perez.png",
+    "Lewis Hamilton": "images/pilotes/Lewis_Hamilton.jpeg",
+    "George Russell": "images/pilotes/George_Russel.png",
+    "Charles Leclerc": "images/pilotes/Charles_Leclerc.png",
+    "Carlos Sainz": "images/pilotes/Carlos_Sainz.png",
+    "Lando Norris": "images/pilotes/Lando_Norris.png",
+    "Oscar Piastri": "images/pilotes/Oscar_Piastri.jpeg",
+    "Fernando Alonso": "images/pilotes/Fernando_Alonzo.png",
+    "Lance Stroll": "images/pilotes/Lance_Stroll.png",
+    "Esteban Ocon": "images/pilotes/Esteban_Ocon.png",
+    "Pierre Gasly": "images/pilotes/Pierre_Gasly.png",
+    "Valtteri Bottas": "images/pilotes/Valtteri_Bottas.png",
+    "Zhou Guanyu": "images/pilotes/Guanyu_Zhou.png",
+    "Kevin Magnussen": "images/pilotes/Kevin_Magnussen.png",
+    "Nico Hülkenberg": "images/pilotes/Nico_Hulkenberg.png",
+    "Yuki Tsunoda": "images/pilotes/Yuki_Tsunoda.png",
+    "Daniel Ricciardo": "images/pilotes/Daniel_Ricciardo.png",
+    "Logan Sargeant": "images/pilotes/Logan-Sargeant.png",
+    "Alexander Albon": "images/pilotes/Alex_Albon.png",
+}
+
+# Logos écuries
+PILOT_TEAMS = {
+    "Max Verstappen": "Red bull.png",
+    "Sergio Pérez": "Red bull.png",
+    "Lewis Hamilton": "Mercedes.png",
+    "George Russell": "Mercedes.png",
+    "Charles Leclerc": "Ferrari.png",
+    "Carlos Sainz": "Ferrari.png",
+    "Lando Norris": "McLaren.png",
+    "Oscar Piastri": "McLaren.png",
+    "Fernando Alonso": "Aston Martin.jpg",
+    "Lance Stroll": "Aston Martin.jpg",
+    "Esteban Ocon": "Alpine.jpeg",
+    "Pierre Gasly": "Alpine.jpeg",
+    "Valtteri Bottas": "Stake.png",
+    "Zhou Guanyu": "Stake.png",
+    "Kevin Magnussen": "Haas.jpg",
+    "Nico Hülkenberg": "Haas.jpg",
+    "Yuki Tsunoda": "Visa cash.png",
+    "Daniel Ricciardo": "Visa cash.png",
+    "Alexander Albon": "Williams.png",
+    "Logan Sargeant": "Williams.png",
+}
+
+# Temps de pit selon l'équipe (pit + manœuvres)
+TEAM_PIT_TIMES = {
+    "Red bull.png": 2.2,
+    "Ferrari.png": 2.5,
+    "Mercedes.png": 2.6,
+    "McLaren.png": 2.4,
+    "Aston Martin.jpg": 2.7,
+    "Alpine.jpeg": 2.8,
+    "Williams.png": 3.0,
+    "Stake.png": 2.9,
+    "Haas.jpg": 3.2,
+    "Visa cash.png": 2.8,
+}
+
+# Pneus : modèle réaliste
+TYRE_COMPOUNDS = {
+    # base_delta = avantage/perte en s quand pneu NEUF
+    # wear_rate = % d'usure par tour
+    "Soft":   {"base_delta": -0.4, "wear_rate": 2.0},
+    "Medium": {"base_delta":  0.0, "wear_rate": 1.3},
+    "Hard":   {"base_delta":  0.3, "wear_rate": 0.8},
+}
+
+STRATEGIES = [
+    {"name": "Aggressive",    "start": "Soft",   "pit_to": "Hard"},
+    {"name": "Équilibrée",    "start": "Medium", "pit_to": "Medium"},
+    {"name": "Conservatrice", "start": "Hard",   "pit_to": "Medium"},
 ]
 
-# =====================================================
-#              CLASSE PRINCIPALE
-# =====================================================
-class RacingSimulator:
+# Météo
+WEATHER_PRESETS = {
+    "Soleil":   {"lap_delta": 0.0, "incident_mult": 1.0},
+    "Nuageux":  {"lap_delta": 0.3, "incident_mult": 1.0},
+    "Pluie":    {"lap_delta": 4.0, "incident_mult": 1.6},
+}
 
+# Incidents
+F1_INCIDENTS = [
+    {"text": "fait une erreur au freinage", "penalty": 1.5},
+    {"text": "bloque une roue",             "penalty": 2.0},
+    {"text": "glisse au point de corde",    "penalty": 1.2},
+]
+
+
+# ==========================================================
+# ======================= CLASSE SIMULATEUR =================
+# ==========================================================
+
+class RacingSimulator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Simulateur Duel F1")
-        self.root.geometry("1000x700")
+        self.root.title("Simulateur F1 – Duel 2024")
+        self.root.geometry("1200x900")
         self.root.configure(bg="#101010")
 
-        self.totalLaps = 20
+        # ---------- STYLE SOMBRE ----------
+        style = ttk.Style()
+        style.configure(".", background="#101010", foreground="white")
+        style.configure("TFrame", background="#101010")
+        style.configure("TLabel", background="#101010", foreground="white")
+        style.configure("Treeview", background="#181818", foreground="white",
+                        fieldbackground="#181818")
+        style.map("Treeview", background=[("selected", "#404040")])
+
+        style.configure("F1.TButton",
+                        font=("Helvetica", 12, "bold"),
+                        padding=6,
+                        background="#303030",
+                        foreground="white")
+        style.map("F1.TButton",
+                  background=[("active", "#404040")],
+                  foreground=[("active", "white")])
+
+        style.configure("TyreGreen.Horizontal.TProgressbar",
+                        troughcolor="#101010", background="#00c853")
+        style.configure("TyreYellow.Horizontal.TProgressbar",
+                        troughcolor="#101010", background="#ffd600")
+        style.configure("TyreRed.Horizontal.TProgressbar",
+                        troughcolor="#101010", background="#ff1744")
+
+        # ---------- Variables de course ----------
         self.currentLap = 0
+        self.totalLaps = 20
         self.isRunning = False
 
-        # Meilleur tour
         self.fastest_lap_time = None
         self.fastest_lap_driver = None
 
-        # Sélection pilotes + circuit
+        self.weather_name = "Soleil"
+        self.safety_car_active = False
+        self.safety_car_laps = 0
+        self.total_safety_car_laps = 0
+
+        # sélections
         self.pilot_vars = [tk.StringVar(), tk.StringVar()]
-        self.pilot_vars[0].set(f1PilotsDatabase[0]["name"])
-        self.pilot_vars[1].set(f1PilotsDatabase[1]["name"])
-        self.circuit_var = tk.StringVar(value=list(CIRCUITS_2024.keys())[0])
+        self.pilot_vars[0].set("Max Verstappen")
+        self.pilot_vars[1].set("Lewis Hamilton")
+        self.circuit_var = tk.StringVar(value="Bahreïn")
 
-        # =============================
-        # UI
-        # =============================
-        title = ttk.Label(root, text="SIMULATEUR F1 – DUEL 2 PILOTES",
-                          font=("Helvetica", 18, "bold"), background="#101010", foreground="white")
-        title.pack(pady=10)
+        # ---------- UI ----------
+        ttk.Label(root, text="SIMULATEUR F1 – 2024",
+                  font=("Helvetica", 22, "bold"),
+                  background="#101010", foreground="white").pack(pady=10)
 
-        # Circuit + Pilotes
-        top = ttk.Frame(root)
-        top.pack()
+        bframe = ttk.Frame(root)
+        bframe.pack()
+        ttk.Button(bframe, text="🚀 Lancer", style="F1.TButton",
+                   command=self.run_simulation).grid(row=0, column=0, padx=20)
+        ttk.Button(bframe, text="🔁 Reset", style="F1.TButton",
+                   command=self.reset_simulation).grid(row=0, column=1, padx=20)
+
+        main_frame = ttk.Frame(root)
+        main_frame.pack(fill="both", expand=True)
+
+        selector_frame = ttk.Frame(main_frame)
+        selector_frame.pack(pady=10)
 
         # Circuit
-        c_frame = ttk.Frame(top)
-        c_frame.grid(row=0, column=0, padx=20)
-        ttk.Label(c_frame, text="Circuit :", background="#101010", foreground="white").pack()
-        ttk.OptionMenu(c_frame, self.circuit_var, self.circuit_var.get(), *CIRCUITS_2024.keys()).pack()
+        ttk.Label(selector_frame, text="Circuit :").grid(row=0, column=0)
+        ttk.OptionMenu(selector_frame, self.circuit_var, self.circuit_var.get(),
+                       *CIRCUITS_2024.keys(),
+                       command=lambda _: self.on_circuit_change()).grid(row=1, column=0, padx=10)
 
         # Pilotes
-        p_frame = ttk.Frame(top)
-        p_frame.grid(row=0, column=1, padx=20)
-
         for i in range(2):
-            ttk.Label(p_frame, text=f"Pilote {i+1} :", background="#101010", foreground="white").grid(row=0, column=i)
-            ttk.OptionMenu(
-                p_frame, self.pilot_vars[i], self.pilot_vars[i].get(),
-                *[p["name"] for p in f1PilotsDatabase],
-                command=lambda _, idx=i: self.select_pilot(idx)
-            ).grid(row=1, column=i, padx=10)
+            ttk.Label(selector_frame, text=f"Pilote {i+1} :").grid(row=0, column=i+1)
+            ttk.OptionMenu(selector_frame, self.pilot_vars[i], self.pilot_vars[i].get(),
+                           *[p["name"] for p in f1PilotsDatabase],
+                           command=lambda _, idx=i: self.on_pilot_change(idx))\
+                .grid(row=1, column=i+1, padx=10)
 
-        # Info tour
-        self.lap_label = ttk.Label(root, text=f"Tour : 0 / {self.totalLaps}",
-                                   background="#101010", foreground="white")
-        self.lap_label.pack(pady=5)
+        # Images pilotes + logos
+        self.pilot_image_labels = [ttk.Label(selector_frame) for _ in range(2)]
+        self.team_image_labels = [ttk.Label(selector_frame) for _ in range(2)]
+        self.pilot_photos = [None, None]
+        self.team_photos = [None, None]
+        for i in range(2):
+            self.pilot_image_labels[i].grid(row=2, column=i+1, pady=5)
+            self.team_image_labels[i].grid(row=3, column=i+1, pady=2)
 
-        # Tableau style F1 TV
-        table_frame = ttk.Frame(root)
+        # Barres d’usure pneus
+        self.tyre_wear_bars = []
+        self.tyre_wear_labels = []
+        for i in range(2):
+            bar = ttk.Progressbar(selector_frame, length=140, maximum=100,
+                                  style="TyreGreen.Horizontal.TProgressbar")
+            bar.grid(row=4, column=i+1, pady=5)
+            self.tyre_wear_bars.append(bar)
+
+            lbl = ttk.Label(selector_frame, text="Usure : 0%  (Soft)")
+            lbl.grid(row=5, column=i+1)
+            self.tyre_wear_labels.append(lbl)
+
+        # HUD
+        self.hud_label = ttk.Label(main_frame, text="", font=("Helvetica", 14, "bold"))
+        self.hud_label.pack(pady=5)
+
+        # Météo
+        self.weather_label = ttk.Label(main_frame, text="Météo : -")
+        self.weather_label.pack()
+
+        # Drapeaux
+        self.flag_label = ttk.Label(main_frame, text="", font=("Helvetica", 30))
+        self.flag_label.pack(pady=5)
+
+        # Lap info
+        self.lap_label = ttk.Label(main_frame, text="Tour : 0 / 0")
+        self.lap_label.pack()
+        self.progress = ttk.Progressbar(main_frame, length=600, maximum=1)
+        self.progress.pack(pady=5)
+
+        # Tableau classement
+        table_frame = ttk.Frame(main_frame)
         table_frame.pack(fill="x", padx=20)
 
-        self.table = ttk.Treeview(table_frame, columns=("pos", "name", "pit", "inc", "gap"),
+        self.table = ttk.Treeview(table_frame,
+                                  columns=("pos", "name", "pit", "inc", "gap"),
                                   show="headings", height=4)
         self.table.pack(fill="x")
-
-        for col, text in zip(("pos", "name", "pit", "inc", "gap"),
-                             ("Pos", "Pilote", "Pits", "Inc.", "Écart")):
-            self.table.heading(col, text=text)
+        for col, txt in zip(("pos", "name", "pit", "inc", "gap"),
+                            ("Pos", "Pilote", "Pits", "Inc", "Écart")):
+            self.table.heading(col, text=txt)
+            self.table.column(col, anchor="center")
 
         # Journal
-        ttk.Label(root, text="Journal de course :", background="#101010",
-                  foreground="white").pack(anchor="w", padx=20)
-        self.event_text = tk.Text(root, height=12, bg="#181818", fg="white", state="disabled")
-        self.event_text.pack(fill="both", expand=True, padx=20, pady=5)
+        ttk.Label(main_frame, text="📜 Journal de course").pack(anchor="w", padx=10)
+        self.event_text = tk.Text(main_frame, height=10,
+                                  bg="#181818", fg="white",
+                                  insertbackground="white")
+        self.event_text.pack(fill="both", expand=True, padx=10, pady=5)
 
-        # Tags couleurs
-        self.event_text.tag_config("incident", foreground="#ff4c4c")
-        self.event_text.tag_config("pit", foreground="#00b7ff")
-        self.event_text.tag_config("overtake", foreground="#a020f0")
-        self.event_text.tag_config("info", foreground="#ffffff")
-
-        # Boutons
-        b_frame = ttk.Frame(root)
-        b_frame.pack(pady=10)
-        ttk.Button(b_frame, text="🚀 Lancer la course", command=self.run_simulation).grid(row=0, column=0, padx=20)
-        ttk.Button(b_frame, text="🔄 Réinitialiser", command=self.reset_simulation).grid(row=0, column=1, padx=20)
-
-        # Init pilotes
+        # INIT
+        self.update_lap_count()
         self.init_pilots()
+        self.update_pilot_and_team_images(0)
+        self.update_pilot_and_team_images(1)
+        self.update_table()
+        self.update_tyre_wear_display()
 
-    # =====================================================
-    # UTIL : Format temps F1 (m:ss.xxx)
-    # =====================================================
-    def format_time(self, s):
+    # ==========================================================
+    # Utils
+    # ==========================================================
+    def format_time(self, s: float) -> str:
         m = int(s // 60)
         sec = s % 60
-        return f"{m}:{sec:06.3f}"
+        return f"{m}:{sec:06.3f}" if m else f"{sec:.3f}"
 
-    # =====================================================
-    # Initialisation pilotes
-    # =====================================================
+    def wear_time_penalty(self, wear_pct: float) -> float:
+        """
+        Transforme un pourcentage d'usure en pénalité temps au tour (s).
+        < 40% : quasi rien
+        40–70% : jusqu'à +0.9s
+        > 70% : jusqu'à +2.5s
+        """
+        if wear_pct < 40:
+            return 0.0
+        elif wear_pct < 70:
+            return (wear_pct - 40) * 0.03  # 0 → 0.9s
+        else:
+            return 0.9 + (wear_pct - 70) * 0.05  # max ~2.4s à 100%
+
+    def show_flag(self, txt: str, color: str = "#ffffff"):
+        self.flag_label.config(text=txt, foreground=color)
+
+    def add_event(self, text: str):
+        self.event_text.config(state="normal")
+        self.event_text.insert("end", text + "\n")
+        self.event_text.see("end")
+        self.event_text.config(state="disabled")
+
+    def update_lap_count(self):
+        self.totalLaps = REAL_LAPS_2024[self.circuit_var.get()]
+        self.progress["maximum"] = self.totalLaps
+        self.lap_label.config(text=f"Tour : 0 / {self.totalLaps}")
+
+    def on_circuit_change(self):
+        self.update_lap_count()
+
+    def on_pilot_change(self, index: int):
+        self.init_pilots()
+        self.update_pilot_and_team_images(index)
+        self.update_table()
+        self.update_tyre_wear_display()
+
+    # ==========================================================
+    # Images pilotes / équipes
+    # ==========================================================
+    def update_pilot_and_team_images(self, index: int):
+        name = self.pilot_vars[index].get()
+
+        # pilote
+        path = PILOT_IMAGES.get(name)
+        if path:
+            try:
+                img = Image.open(path).resize((120, 120))
+                self.pilot_photos[index] = ImageTk.PhotoImage(img)
+                self.pilot_image_labels[index].config(image=self.pilot_photos[index], text="")
+            except:
+                self.pilot_image_labels[index].config(text="Pas d'image pilote", image="")
+        else:
+            self.pilot_image_labels[index].config(text="Pas d'image pilote", image="")
+
+        # logo écurie
+        team_file = PILOT_TEAMS.get(name)
+        if team_file:
+            try:
+                img = Image.open("images/teams/" + team_file).resize((60, 60))
+                self.team_photos[index] = ImageTk.PhotoImage(img)
+                self.team_image_labels[index].config(image=self.team_photos[index], text="")
+            except:
+                self.team_image_labels[index].config(text="Logo manquant", image="")
+        else:
+            self.team_image_labels[index].config(text="Logo ?", image="")
+
+    # ==========================================================
+    # Gestion pneus (affichage usure)
+    # ==========================================================
+    def update_tyre_wear_display(self):
+        for i, p in enumerate(self.pilots):
+            wear = int(p.get("tyre_wear_percent", 0.0))
+            self.tyre_wear_bars[i]["value"] = wear
+
+            if wear < 40:
+                style = "TyreGreen.Horizontal.TProgressbar"
+            elif wear < 70:
+                style = "TyreYellow.Horizontal.TProgressbar"
+            else:
+                style = "TyreRed.Horizontal.TProgressbar"
+
+            self.tyre_wear_bars[i].config(style=style)
+            self.tyre_wear_labels[i].config(
+                text=f"Usure : {wear}%  ({p['tyre']})"
+            )
+
+    # ==========================================================
+    # Init pilotes
+    # ==========================================================
     def init_pilots(self):
         self.pilots = []
-        for i in range(2):
-            data = next(p for p in f1PilotsDatabase if p["name"] == self.pilot_vars[i].get()).copy()
-            data.update({
-                "position": i+1,
+        for var in self.pilot_vars:
+            name = var.get()
+            base = next(p for p in f1PilotsDatabase if p["name"] == name)
+            strat = random.choice(STRATEGIES)
+
+            p = base.copy()
+            p.update({
+                "total_time": 0.0,
                 "incidents": 0,
                 "pit_stops": 0,
                 "pit_done": False,
-                "total_time": 0.0
+                "strategy": strat["name"],
+                "tyre": strat["start"],
+                "next_tyre": strat["pit_to"],
+                "tyre_laps": 0,
+                "tyre_wear_percent": 0.0,
+                "target_pit_lap": random.randint(6, max(7, int(self.totalLaps * 0.6))),
+                "pit_lap": None,
             })
-            self.pilots.append(data)
-        self.update_table()
+            self.pilots.append(p)
 
-    # Changement pilote depuis menu
-    def select_pilot(self, index):
-        name = self.pilot_vars[index].get()
-        data = next(p for p in f1PilotsDatabase if p["name"] == name).copy()
-        data.update({
-            "position": index+1,
-            "incidents": 0,
-            "pit_stops": 0,
-            "pit_done": False,
-            "total_time": 0.0
-        })
-        self.pilots[index] = data
-        self.update_table()
-
-    # =====================================================
-    # TABLEAU
-    # =====================================================
-    def update_table(self):
-        for row in self.table.get_children():
-            self.table.delete(row)
-
-        ordered = sorted(self.pilots, key=lambda x: x["total_time"])
-        leader = ordered[0]["total_time"]
-
-        for p in ordered:
-            gap = p["total_time"] - leader
-            gap_text = "-" if gap == 0 else f"+{gap:.3f}"
-            self.table.insert("", "end",
-                              values=(f"P{ordered.index(p)+1}", p["name"],
-                                      p["pit_stops"], p["incidents"], gap_text))
-
-    # =====================================================
-    # CALCUL TEMPS AU TOUR
-    # =====================================================
+    # ==========================================================
+    # Simulation 1 tour
+    # ==========================================================
     def simulate_lap(self):
         events = []
+        flags = set()
+
         base = CIRCUITS_2024[self.circuit_var.get()]
+        weather = WEATHER_PRESETS[self.weather_name]
 
         for p in self.pilots:
+            compound = TYRE_COMPOUNDS[p["tyre"]]
 
-            # Calcul réaliste
-            speed = (10 - p["speed"]) * 0.35
-            const = (10 - p["consistency"]) * 0.20
-            variance = random.uniform(-0.4, 0.4) * (1.3 - p["consistency"]/10)
+            # 1) Usure pneus
+            lap_wear = compound["wear_rate"]
+            if self.safety_car_active:
+                lap_wear *= 0.3
+            if self.weather_name == "Pluie":
+                lap_wear *= 0.7
 
-            perfect = 0
-            if random.random() < (0.02 + p["consistency"]/200):
-                perfect = random.uniform(-0.25, -0.10)
+            p["tyre_wear_percent"] = min(100.0, p["tyre_wear_percent"] + lap_wear)
 
-            lap = base + speed + const + variance + perfect
+            # 2) Pénalité liée à l'usure
+            wear_penalty = self.wear_time_penalty(p["tyre_wear_percent"])
 
-            # PIT stop ?
-            remaining = self.totalLaps - self.currentLap
-            must_pit = False
+            # 3) Temps de base du tour
+            if self.safety_car_active:
+                lap = (
+                    base
+                    + 10.0
+                    + weather["lap_delta"]
+                    + random.uniform(-0.3, 0.3)
+                )
+            else:
+                lap = (
+                    base
+                    + compound["base_delta"]
+                    + weather["lap_delta"]
+                    + wear_penalty
+                    + random.uniform(-0.4, 0.4)
+                )
 
-            if not p["pit_done"]:
-                pit_prob = 0.04 + max(0, 10 - remaining) * 0.03
-                if random.random() < pit_prob:
-                    must_pit = True
-                if remaining <= 2:
-                    must_pit = True
+            # 4) PIT obligatoire
+            if (not p["pit_done"]) and self.currentLap == p["target_pit_lap"]:
+                team_logo = PILOT_TEAMS.get(p["name"])
+                pit_base = TEAM_PIT_TIMES.get(team_logo, 2.8)
+                pit_loss = pit_base + 3.5 + random.uniform(-0.2, 0.2)
 
-            if must_pit:
+                lap += pit_loss
                 p["pit_done"] = True
                 p["pit_stops"] += 1
-                lap += 18
-                events.append((f"{p['name']} effectue un arrêt (+18s)", "pit"))
+                p["pit_lap"] = self.currentLap
+                p["tyre"] = p["next_tyre"]
+                p["tyre_laps"] = 0
+                p["tyre_wear_percent"] = 0.0
 
-            # INCIDENT
-            if p["aggression"]/60 + random.random()*0.05 > 0.16:
+                events.append(
+                    f"🛠️ {p['name']} effectue son arrêt (+{pit_loss:.1f}s) – pneus {p['tyre']}"
+                )
+                flags.add("pit")
+
+            # 5) Incidents
+            incident_chance = 0.05  # base
+
+            if p["tyre_wear_percent"] > 60:
+                incident_chance += (p["tyre_wear_percent"] - 60) * 0.002
+
+            incident_chance *= weather["incident_mult"]
+
+            if random.random() < incident_chance:
                 inc = random.choice(F1_INCIDENTS)
-                p["incidents"] += 1
                 lap += inc["penalty"]
-                events.append((f"{p['name']} {inc['text']} (+{inc['penalty']}s)", "incident"))
+                p["incidents"] += 1
+                events.append(
+                    f"⚠️ {p['name']} {inc['text']} (+{inc['penalty']:.1f}s)"
+                )
+                flags.add("yellow")
 
-            # Meilleur tour
-            if self.fastest_lap_time is None or lap < self.fastest_lap_time:
-                self.fastest_lap_time = lap
-                self.fastest_lap_driver = p["name"]
-                events.append((f"🔥 Meilleur tour pour {p['name']} : {self.format_time(lap)}", "overtake"))
+                if (not self.safety_car_active) and random.random() < 0.25:
+                    self.safety_car_active = True
+                    self.safety_car_laps = random.randint(2, 4)
+                    events.append("🚨 Safety car déployée !")
+                    flags.add("sc")
 
-            # Update temps total
+            # 6) Meilleur tour (hors SC)
+            if not self.safety_car_active:
+                if self.fastest_lap_time is None or lap < self.fastest_lap_time:
+                    self.fastest_lap_time = lap
+                    self.fastest_lap_driver = p["name"]
+                    events.append(
+                        f"💜 Meilleur tour : {p['name']} {self.format_time(lap)}"
+                    )
+                    flags.add("purple")
+
+            # Mise à jour temps & compteur de tours sur ce set de pneus
             p["total_time"] += lap
+            p["tyre_laps"] += 1
+
+        # 7) Safety car : gestion de la durée
+        if self.safety_car_active:
+            self.safety_car_laps -= 1
+            self.total_safety_car_laps += 1
+            if self.safety_car_laps <= 0:
+                self.safety_car_active = False
+                events.append("🚨 Safety car rentre aux stands.")
 
         self.pilots.sort(key=lambda x: x["total_time"])
-        return events
+        return events, flags
 
-    # =====================================================
-    # LANCER LA COURSE
-    # =====================================================
+    # ==========================================================
+    # Gestion course
+    # ==========================================================
     def run_simulation(self):
         if self.isRunning:
             return
@@ -282,87 +556,178 @@ class RacingSimulator:
         self.currentLap = 0
         self.fastest_lap_time = None
         self.fastest_lap_driver = None
+        self.safety_car_active = False
+        self.safety_car_laps = 0
+        self.total_safety_car_laps = 0
+
+        self.weather_name = random.choice(list(WEATHER_PRESETS.keys()))
+        self.weather_label.config(text=f"Météo : {self.weather_name}")
 
         self.init_pilots()
         self.update_table()
+        self.update_tyre_wear_display()
 
         self.event_text.config(state="normal")
-        self.event_text.delete("1.0", tk.END)
+        self.event_text.delete("1.0", "end")
         self.event_text.config(state="disabled")
 
-        self.add_event(f"Départ du Grand Prix de {self.circuit_var.get()} !", "info")
+        self.add_event(f"🌤️ Météo : {self.weather_name}")
+        for p in self.pilots:
+            self.add_event(
+                f"📋 {p['name']} stratégie {p['strategy']} (départ en {p['tyre']}, pit vers T{p['target_pit_lap']})"
+            )
+
         self.root.after(800, self.next_lap)
 
-    # =====================================================
-    # PROCHAIN TOUR
-    # =====================================================
     def next_lap(self):
         if self.currentLap >= self.totalLaps:
-
-            # PIT manquant
-            for p in self.pilots:
-                if not p["pit_done"]:
-                    p["pit_stops"] += 1
-                    p["total_time"] += 20
-                    self.add_event(f"⚠️ {p['name']} n'avait pas fait d'arrêt : +20s", "pit")
-
-            # Meilleur tour final
-            if self.fastest_lap_time:
-                self.add_event(
-                    f"⏱️ Meilleur tour : {self.fastest_lap_driver} en {self.format_time(self.fastest_lap_time)}",
-                    "info"
-                )
-
-            # Classement final
-            self.pilots.sort(key=lambda x: x["total_time"])
-            winner = self.pilots[0]["name"]
-            self.add_event(f"🏁 Vainqueur : {winner}", "info")
-
-            self.update_table()
-            self.isRunning = False
+            self.finish_race()
             return
 
-        # Sinon on continue
         self.currentLap += 1
         self.lap_label.config(text=f"Tour : {self.currentLap} / {self.totalLaps}")
+        self.progress["value"] = self.currentLap
 
-        events = self.simulate_lap()
+        events, flags = self.simulate_lap()
         self.update_table()
+        self.update_tyre_wear_display()
 
-        for msg, tag in events:
-            self.add_event(f"[Tour {self.currentLap}] {msg}", tag)
+        # Drapeaux
+        if "sc" in flags:
+            self.show_flag("🚨 SAFETY CAR", "#ffcc00")
+        elif "pit" in flags:
+            self.show_flag("🛠️ PIT STOP", "#00c853")
+        elif "yellow" in flags:
+            self.show_flag("⚠️ JAUNE", "#ffd600")
+        elif "purple" in flags:
+            self.show_flag("💜 BEST LAP", "#ff66ff")
+        else:
+            self.show_flag("", "#ffffff")
+
+        for e in events:
+            self.add_event(f"[T{self.currentLap}] {e}")
 
         self.root.after(800, self.next_lap)
 
-    # =====================================================
-    # JOURNAL
-    # =====================================================
-    def add_event(self, text, tag="info"):
-        self.event_text.config(state="normal")
-        self.event_text.insert(tk.END, text + "\n", tag)
-        self.event_text.see(tk.END)
-        self.event_text.config(state="disabled")
+    # ==========================================================
+    # Fin de course + fenêtre résumé
+    # ==========================================================
+    def finish_race(self):
+        self.isRunning = False
+        self.pilots.sort(key=lambda x: x["total_time"])
+        winner = self.pilots[0]["name"]
+        self.add_event(f"🏁 Victoire : {winner}")
+        self.show_flag("🏁", "#ffffff")
+        self.show_summary_window()
 
-    # =====================================================
-    # RESET
-    # =====================================================
+    def show_summary_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Résumé de la course")
+        win.configure(bg="#101010")
+
+        ttk.Label(win, text="Résumé de la course",
+                  font=("Helvetica", 16, "bold")).pack(pady=10)
+
+        # Tableau final
+        table_frame = ttk.Frame(win)
+        table_frame.pack(padx=10, pady=5, fill="x")
+
+        summary_table = ttk.Treeview(table_frame,
+                                     columns=("pos", "name", "gap", "pits", "inc"),
+                                     show="headings", height=6)
+        summary_table.pack(fill="x")
+
+        for col, txt in zip(("pos", "name", "gap", "pits", "inc"),
+                            ("Pos", "Pilote", "Écart", "Pits", "Incidents")):
+            summary_table.heading(col, text=txt)
+            summary_table.column(col, anchor="center")
+
+        leader_time = self.pilots[0]["total_time"]
+        for i, p in enumerate(self.pilots):
+            gap = p["total_time"] - leader_time
+            gap_txt = "-" if i == 0 else f"+{self.format_time(gap)}"
+            summary_table.insert(
+                "", "end",
+                values=(
+                    f"P{i+1}",
+                    p["name"],
+                    gap_txt,
+                    p["pit_stops"],
+                    p["incidents"],
+                )
+            )
+
+        info_frame = ttk.Frame(win)
+        info_frame.pack(padx=10, pady=10, fill="x")
+
+        winner = self.pilots[0]["name"]
+        ttk.Label(info_frame, text=f"Vainqueur : {winner}").pack(anchor="w")
+        if self.fastest_lap_time is not None and self.fastest_lap_driver is not None:
+            ttk.Label(
+                info_frame,
+                text=f"Meilleur tour : {self.fastest_lap_driver} ({self.format_time(self.fastest_lap_time)})"
+            ).pack(anchor="w")
+
+        ttk.Label(info_frame, text=f"Météo : {self.weather_name}").pack(anchor="w")
+        ttk.Label(info_frame, text=f"Tours sous Safety Car : {self.total_safety_car_laps}").pack(anchor="w")
+
+        ttk.Button(win, text="Fermer", style="F1.TButton", command=win.destroy)\
+            .pack(pady=10)
+
+    # ==========================================================
+    # Table & reset
+    # ==========================================================
+    def update_table(self):
+        for row in self.table.get_children():
+            self.table.delete(row)
+
+        if not hasattr(self, "pilots") or not self.pilots:
+            return
+
+        leader = min(self.pilots, key=lambda p: p["total_time"])
+        leader_time = leader["total_time"]
+
+        if self.fastest_lap_time:
+            hud = (f"Leader : {leader['name']} | "
+                   f"💜 Meilleur tour : {self.fastest_lap_driver} "
+                   f"({self.format_time(self.fastest_lap_time)})")
+        else:
+            hud = f"Leader : {leader['name']}"
+        self.hud_label.config(text=hud)
+
+        for i, p in enumerate(self.pilots):
+            gap = p["total_time"] - leader_time
+            gap_txt = "-" if abs(gap) < 0.01 else f"+{self.format_time(gap)}"
+            self.table.insert(
+                "", "end",
+                values=(f"P{i+1}", p["name"], p["pit_stops"], p["incidents"], gap_txt)
+            )
+
     def reset_simulation(self):
         self.isRunning = False
         self.currentLap = 0
         self.fastest_lap_time = None
         self.fastest_lap_driver = None
+        self.safety_car_active = False
+        self.safety_car_laps = 0
+        self.total_safety_car_laps = 0
 
-        self.lap_label.config(text=f"Tour : 0 / {self.totalLaps}")
+        self.update_lap_count()
         self.init_pilots()
+        self.update_table()
+        self.update_tyre_wear_display()
+
+        self.flag_label.config(text="")
+        self.weather_label.config(text="Météo : -")
 
         self.event_text.config(state="normal")
-        self.event_text.delete("1.0", tk.END)
+        self.event_text.delete("1.0", "end")
         self.event_text.config(state="disabled")
 
 
-# =====================================================
-# LANCER L'APP
-# =====================================================
+# ==========================================================
+# Lancement
+# ==========================================================
 if __name__ == "__main__":
     root = tk.Tk()
     app = RacingSimulator(root)
